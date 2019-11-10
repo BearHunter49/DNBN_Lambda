@@ -2,13 +2,20 @@ import cv2
 import boto3
 import json
 from urllib.parse import unquote_plus
+<<<<<<< HEAD
 # from moviepy.editor import *
+=======
+import uuid
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
 
 
 s3 = boto3.client('s3')
 rek = boto3.client('rekognition')
 mosaic_rate = 20
+<<<<<<< HEAD
 max_index = 10
+=======
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
 
 
 # Rotate Method
@@ -69,7 +76,11 @@ def video_processing(job_id, path):
     finished = False
 
     # Get Meta Data
+<<<<<<< HEAD
     response = rek.get_face_search(JobId=job_id, MaxResults=max_index)
+=======
+    response = rek.get_face_search(JobId=job_id, MaxResults=1)
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     frameRate = response['VideoMetadata']['FrameRate']
     width = response['VideoMetadata']['FrameWidth']
     height = response['VideoMetadata']['FrameHeight']
@@ -80,12 +91,15 @@ def video_processing(job_id, path):
     result_path = path.split(".")[0] + "_.mp4"
     writer = cv2.VideoWriter(result_path, fourcc, frameRate, (width, height))
 
+<<<<<<< HEAD
     # MoviePy
     # originalVideo = VideoFileClip(path)
     # audio = originalVideo.audio
     # audio.write_audiofile("/tmp/temp.mp3")
     # resultAudio = AudioFileClip("/tmp/temp.mp3")
 
+=======
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     # Variables
     temp_timeStamp = 0
     box_list = []
@@ -94,6 +108,7 @@ def video_processing(job_id, path):
 
         for faceDetection in response['Persons']:
             face_matches = faceDetection['FaceMatches']
+<<<<<<< HEAD
             time_stamp = faceDetection['Timestamp']
             bounding_box = faceDetection['Person']['Face']['BoundingBox']
 
@@ -120,10 +135,42 @@ def video_processing(job_id, path):
 
                         # only box_list exist part
                         if box_list:
+=======
+
+            # non-exist face_match
+            if not face_matches:
+                # Time Stamp
+                time_stamp = faceDetection['Timestamp']
+                bounding_box = faceDetection['Person']['Face']['BoundingBox']
+
+                # if same era
+                if temp_timeStamp == time_stamp:
+                    box_list.append(bounding_box)
+
+                # if different era
+                else:
+                    # implicit mosaic part
+                    cap.set(cv2.CAP_PROP_POS_MSEC, temp_timeStamp)
+                    while True:
+                        ret, frame = cap.read()
+
+                        # if read success
+                        if ret:
+                            current_time = cap.get(cv2.CAP_PROP_POS_MSEC)
+
+                            # check time
+                            if current_time >= time_stamp:
+                                temp_timeStamp = time_stamp
+                                box_list.clear()
+                                box_list.append(bounding_box)
+                                break
+
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
                             # mosaic N face at 1 frame
                             for box in box_list:
                                 frame = mosaic(box, frame, width, height)
 
+<<<<<<< HEAD
                         # write video
                         writer.write(frame)
                     # fail(last)
@@ -135,6 +182,13 @@ def video_processing(job_id, path):
                 # exist non_face_match
                 if not face_matches:
                     box_list.append(bounding_box)
+=======
+                            # write video
+                            writer.write(frame)
+                        # fail(last)
+                        else:
+                            break
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
 
             # print("width:{} height:{} left:{} top:{} right:{} bottom:{}".format(box_width, box_height, box_left,
             #                                                                     box_top, box_right, box_bottom))
@@ -155,6 +209,7 @@ def video_processing(job_id, path):
             break
 
     cap.release()
+<<<<<<< HEAD
 
     # Add Audio to Result Video File
     # resultVideo = VideoFileClip(result_path)
@@ -162,10 +217,16 @@ def video_processing(job_id, path):
     # result_path = result_path.split()[0] + "+.mp4"
     # muxVideo.write_videofile(result_path)
 
+=======
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     return result_path
 
 
 def lambda_handler(event, context):
+<<<<<<< HEAD
+=======
+
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     # string type
     # message = event['Records'][0]['Sns']['Message']
     # message_json = json.loads(message)
@@ -186,5 +247,10 @@ def lambda_handler(event, context):
     resultPath = video_processing(jobId, download_path)
 
     s3.upload_file(resultPath, bucket, 'rekognition/test_.mp4')
+<<<<<<< HEAD
+=======
+
+    return {}
+>>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
 
     return {}
