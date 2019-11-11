@@ -2,21 +2,12 @@ import cv2
 import boto3
 import json
 from urllib.parse import unquote_plus
-<<<<<<< HEAD
 # from moviepy.editor import *
-=======
-import uuid
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
+import os
 
 
-s3 = boto3.client('s3')
 rek = boto3.client('rekognition')
 mosaic_rate = 20
-<<<<<<< HEAD
-max_index = 10
-=======
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
-
 
 # Rotate Method
 def rotate(mat, angle):
@@ -36,7 +27,7 @@ def rotate(mat, angle):
     return mat
 
 
-def mosaic(box, frame, width, height):
+def get_box_parameters(box, width, height):
     box_width = int(box['Width'] * width)
     box_height = int(box['Height'] * height)
     box_left = int(box['Left'] * width)
@@ -59,15 +50,67 @@ def mosaic(box, frame, width, height):
         box_top = 0
         box_height = box_bottom - box_top
 
+    box_dict = {
+        'left': box_left,
+        'right': box_right,
+        'top': box_top,
+        'bottom': box_bottom,
+        'width': box_width,
+        'height': box_height
+    }
+    return box_dict
+
+
+def mosaic(box_prev, box_next, frame, width, height, ratio):
+
     # rotate and mosaic
     frame = rotate(frame, -90)
 
-    # mosaic
-    face_img = frame[box_top:box_bottom, box_left:box_right]
-    face_img = cv2.resize(face_img, (box_width // mosaic_rate, box_height // mosaic_rate))
-    face_img = cv2.resize(face_img, (box_width, box_height), cv2.INTER_AREA)
-    frame[box_top:box_bottom, box_left:box_right] = face_img
-    return frame
+    # if next box is None
+    if not box_next:
+        box_dict = get_box_parameters(box_prev, width, height)
+
+        # mosaic
+        face_img = frame[box_dict['top']:box_dict['bottom'], box_dict['left']:box_dict['right']]
+        face_img = cv2.resize(face_img, (box_dict['width'] // mosaic_rate, box_dict['height'] // mosaic_rate))
+        face_img = cv2.resize(face_img, (box_dict['width'], box_dict['height']), cv2.INTER_AREA)
+        frame[box_dict['top']:box_dict['bottom'], box_dict['left']:box_dict['right']] = face_img
+        return frame
+
+    # if both box exist
+    else:
+        box_dict_prev = get_box_parameters(box_prev, width, height)
+        box_dict_next = get_box_parameters(box_next, width, height)
+
+        box_left = 0
+        box_top = 0
+
+        # check direction
+        horizon_gap = box_dict_prev['left'] - box_dict_next['left']
+        if horizon_gap < 0:
+            # right
+            box_left = box_dict_prev['left'] + int(abs(horizon_gap) * ratio)
+        else:
+            # left
+            box_left = box_dict_prev['left'] - int(abs(horizon_gap) * ratio)
+
+        vertical_gap = box_dict_prev['top'] - box_dict_next['top']
+        if vertical_gap < 0:
+            # down
+            box_top = box_dict_prev['top'] + int(abs(vertical_gap) * ratio)
+        else:
+            # up
+            box_top = box_dict_prev['top'] - int(abs(vertical_gap) * ratio)
+
+        box_right = box_left + box_dict_prev['width']
+        box_bottom = box_top + box_dict_prev['height']
+
+        # mosaic
+        face_img = frame[box_top:box_bottom, box_left:box_right]
+        face_img = cv2.resize(face_img, (box_dict_prev['width'] // mosaic_rate, box_dict_prev['height'] // mosaic_rate))
+        face_img = cv2.resize(face_img, (box_dict_prev['width'], box_dict_prev['height']), cv2.INTER_AREA)
+        frame[box_top:box_bottom, box_left:box_right] = face_img
+        return frame
 
 
 def video_processing(job_id, path):
@@ -76,11 +119,7 @@ def video_processing(job_id, path):
     finished = False
 
     # Get Meta Data
-<<<<<<< HEAD
-    response = rek.get_face_search(JobId=job_id, MaxResults=max_index)
-=======
     response = rek.get_face_search(JobId=job_id, MaxResults=1)
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     frameRate = response['VideoMetadata']['FrameRate']
     width = response['VideoMetadata']['FrameWidth']
     height = response['VideoMetadata']['FrameHeight']
@@ -91,66 +130,40 @@ def video_processing(job_id, path):
     result_path = path.split(".")[0] + "_.mp4"
     writer = cv2.VideoWriter(result_path, fourcc, frameRate, (width, height))
 
-<<<<<<< HEAD
     # MoviePy
     # originalVideo = VideoFileClip(path)
     # audio = originalVideo.audio
-    # audio.write_audiofile("/tmp/temp.mp3")
-    # resultAudio = AudioFileClip("/tmp/temp.mp3")
+    # audio.write_audiofile("/tmp/my.mp3")
 
-=======
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     # Variables
-    temp_timeStamp = 0
-    box_list = []
+    prev_timeStamp = 0
+    cur_timeStamp = 0
+    box_dict_pre = dict()
+    box_dict_next = dict()
+    start_check = 0
     while finished == False:
         response = rek.get_face_search(JobId=job_id, MaxResults=maxResults, NextToken=paginationToken)
 
         for faceDetection in response['Persons']:
             face_matches = faceDetection['FaceMatches']
-<<<<<<< HEAD
             time_stamp = faceDetection['Timestamp']
             bounding_box = faceDetection['Person']['Face']['BoundingBox']
+            index = faceDetection['Person']['Index']
 
             # when timestamp changed,
-            if temp_timeStamp != time_stamp:
-                # implicit mosaic part
-                cap.set(cv2.CAP_PROP_POS_MSEC, temp_timeStamp)
-                while True:
-                    ret, frame = cap.read()
+            if cur_timeStamp != time_stamp:
 
-                    # if read success
-                    if ret:
-                        current_time = cap.get(cv2.CAP_PROP_POS_MSEC)
+                # initial part
+                if start_check == 0:
+                    start_check = 1
+                    cur_timeStamp = time_stamp
+                    if not face_matches:
+                        box_dict_next[index] = bounding_box
 
-                        # check time
-                        if current_time >= time_stamp:
-                            temp_timeStamp = time_stamp
-                            box_list.clear()
-
-                            # check is this loop non_face_match
-                            if not face_matches:
-                                box_list.append(bounding_box)
-                            break
-
-                        # only box_list exist part
-                        if box_list:
-=======
-
-            # non-exist face_match
-            if not face_matches:
-                # Time Stamp
-                time_stamp = faceDetection['Timestamp']
-                bounding_box = faceDetection['Person']['Face']['BoundingBox']
-
-                # if same era
-                if temp_timeStamp == time_stamp:
-                    box_list.append(bounding_box)
-
-                # if different era
                 else:
                     # implicit mosaic part
-                    cap.set(cv2.CAP_PROP_POS_MSEC, temp_timeStamp)
+                    cap.set(cv2.CAP_PROP_POS_MSEC, prev_timeStamp)
+                    prev_cur_time_gap = cur_timeStamp - prev_timeStamp
                     while True:
                         ret, frame = cap.read()
 
@@ -159,36 +172,50 @@ def video_processing(job_id, path):
                             current_time = cap.get(cv2.CAP_PROP_POS_MSEC)
 
                             # check time
-                            if current_time >= time_stamp:
-                                temp_timeStamp = time_stamp
-                                box_list.clear()
-                                box_list.append(bounding_box)
+                            if current_time >= cur_timeStamp:
+                                prev_timeStamp = cur_timeStamp
+                                cur_timeStamp = time_stamp
+
+                                box_dict_pre = box_dict_next
+                                box_dict_next = dict()
+
+                                # check is this first loop non_face_match
+                                if not face_matches:
+                                    box_dict_next[index] = bounding_box
                                 break
 
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
-                            # mosaic N face at 1 frame
-                            for box in box_list:
-                                frame = mosaic(box, frame, width, height)
+                            # implicit mosaic
+                            time_gap = current_time - prev_timeStamp
+                            ratio = time_gap / prev_cur_time_gap
 
-<<<<<<< HEAD
-                        # write video
-                        writer.write(frame)
-                    # fail(last)
-                    else:
-                        break
+                            # mosaic
+                            for key, value in box_dict_pre.items():
+                                value_next = box_dict_next.get(key)
+                                # if exist same index
+                                if value_next:
+                                    frame = mosaic(value, value_next, frame, width, height, ratio)
+                                # if non-exist same index
+                                else:
+                                    frame = mosaic(value, None, frame, width, height, ratio)
 
-            # when timestamp same,
-            else:
-                # exist non_face_match
-                if not face_matches:
-                    box_list.append(bounding_box)
-=======
                             # write video
                             writer.write(frame)
                         # fail(last)
                         else:
                             break
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
+
+            # when timestamp same,
+            else:
+                # initial part
+                if start_check == 0:
+                    # exist non_face_match
+                    if not face_matches:
+                        box_dict_pre[index] = bounding_box
+                else:
+                    # exist non_face_match
+                    if not face_matches:
+                        box_dict_next[index] = bounding_box
+
 
             # print("width:{} height:{} left:{} top:{} right:{} bottom:{}".format(box_width, box_height, box_left,
             #                                                                     box_top, box_right, box_bottom))
@@ -199,7 +226,7 @@ def video_processing(job_id, path):
             finished = True
 
     # write remained part
-    cap.set(cv2.CAP_PROP_POS_MSEC, temp_timeStamp)
+    cap.set(cv2.CAP_PROP_POS_MSEC, prev_timeStamp)
     while cap.isOpened():
         ret, frame = cap.read()
         if ret:
@@ -209,24 +236,20 @@ def video_processing(job_id, path):
             break
 
     cap.release()
-<<<<<<< HEAD
 
     # Add Audio to Result Video File
     # resultVideo = VideoFileClip(result_path)
-    # muxVideo = resultVideo.set_audio(resultAudio)
-    # result_path = result_path.split()[0] + "+.mp4"
-    # muxVideo.write_videofile(result_path)
+    #
+    # result_path = result_path.split(".")[0] + "final.mp4"
+    # resultVideo.write_videofile(result_path, audio="/tmp/my.mp3")
 
-=======
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     return result_path
 
 
 def lambda_handler(event, context):
-<<<<<<< HEAD
-=======
+    s3 = boto3.client('s3')
+    # os.environ['IMAGEIO_FFMPEG_EXE'] = '/tmp'
 
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
     # string type
     # message = event['Records'][0]['Sns']['Message']
     # message_json = json.loads(message)
@@ -241,16 +264,14 @@ def lambda_handler(event, context):
     bucket = 'bylivetest'
     download_path = "/tmp/test.mp4"
 
+    # s3.download_file(bucket, 'ffmpeg-linux64-v4.1', '/tmp/ffmpeg-linux64-v4.1')
+
     # check success
     # if status == "SUCCEEDED":
     s3.download_file(bucket, video, download_path)
+
     resultPath = video_processing(jobId, download_path)
 
-    s3.upload_file(resultPath, bucket, 'rekognition/test_.mp4')
-<<<<<<< HEAD
-=======
-
-    return {}
->>>>>>> e6dc479bfc4b7216d63ad0b9f61a884f09814559
+    s3.upload_file(resultPath, bucket, 'rekognition/final.mp4')
 
     return {}
