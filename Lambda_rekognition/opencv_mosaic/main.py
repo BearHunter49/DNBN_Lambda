@@ -7,7 +7,7 @@ import os
 
 
 rek = boto3.client('rekognition')
-mosaic_rate = 20
+mosaic_rate = 30
 
 # Rotate Method
 def rotate(mat, angle):
@@ -64,7 +64,7 @@ def get_box_parameters(box, width, height):
 def mosaic(box_prev, box_next, frame, width, height, ratio):
 
     # rotate and mosaic
-    frame = rotate(frame, -90)
+    # frame = rotate(frame, -90)
 
     # if next box is None
     if not box_next:
@@ -105,10 +105,19 @@ def mosaic(box_prev, box_next, frame, width, height, ratio):
         box_right = box_left + box_dict_prev['width']
         box_bottom = box_top + box_dict_prev['height']
 
+        # check overflow
+        if box_right >= width:
+            box_right = width
+            box_dict_prev['width'] = box_right - box_left
+        if box_bottom >= height:
+            box_bottom = height
+            box_dict_prev['height'] = box_bottom - box_top
+
         # mosaic
         face_img = frame[box_top:box_bottom, box_left:box_right]
         face_img = cv2.resize(face_img, (box_dict_prev['width'] // mosaic_rate, box_dict_prev['height'] // mosaic_rate))
         face_img = cv2.resize(face_img, (box_dict_prev['width'], box_dict_prev['height']), cv2.INTER_AREA)
+        # print(box_left, box_right, box_top, box_bottom, box_dict_prev['width'], box_dict_prev['height'])
         frame[box_top:box_bottom, box_left:box_right] = face_img
         return frame
 
@@ -251,27 +260,34 @@ def lambda_handler(event, context):
     # os.environ['IMAGEIO_FFMPEG_EXE'] = '/tmp'
 
     # string type
-    # message = event['Records'][0]['Sns']['Message']
-    # message_json = json.loads(message)
+    message = event['Records'][0]['Sns']['Message']
+    message_json = json.loads(message)
 
-    # jobId = message_json["JobId"]
-    # status = message_json["Status"]
-    # bucket = message_json["Video"]["S3Bucket"]
-    # video = message_json["Video"]["S3ObjectName"]
+    jobId = message_json["JobId"]
+    status = message_json["Status"]
+    bucket = message_json["Video"]["S3Bucket"]
+    video = message_json["Video"]["S3ObjectName"]
+    temp_list = video.split("/")
+    userName = temp_list[1]
+    date = temp_list[2]
+    print("userName: {}, date: {}".format(userName, date))
 
-    jobId = '0e6bdeae52d2170386d4d00d8d9d45a2c33c533262fad3503f2be9d40a49246c'
-    video = unquote_plus('rekognition/test.mp4')
-    bucket = 'bylivetest'
     download_path = "/tmp/test.mp4"
 
     # s3.download_file(bucket, 'ffmpeg-linux64-v4.1', '/tmp/ffmpeg-linux64-v4.1')
 
     # check success
-    # if status == "SUCCEEDED":
-    s3.download_file(bucket, video, download_path)
+    if status == "SUCCEEDED":
+        s3.download_file(bucket, video, download_path)
+        resultPath = video_processing(jobId, download_path)
 
-    resultPath = video_processing(jobId, download_path)
+        s3.upload_file(resultPath, bucket, 'rekognition/{}/{}/noSound.mp4'.format(userName, date))
 
-    s3.upload_file(resultPath, bucket, 'rekognition/final.mp4')
+    else:
+        return {
+            'result': 'Failed!!'
+        }
 
-    return {}
+    return {
+        'result': "Success!!"
+    }
