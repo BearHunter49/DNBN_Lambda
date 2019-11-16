@@ -14,6 +14,7 @@ def lambda_handler(event, context):
     collection_id = today
     bucket = 'bylivetest'
     photo = 'rekognition/{}/myFace.jpg'.format(temp_list[1])
+    # photo2 = 'rekognition/{}/myFace2.jpg'.format(temp_list[1])
     
     rek = boto3.client('rekognition')
   
@@ -24,6 +25,13 @@ def lambda_handler(event, context):
                                 MaxFaces=1,
                                 QualityFilter="AUTO",
                                 DetectionAttributes=['ALL'])
+                                
+    # face 2
+    # response = rek.index_faces(CollectionId=collection_id,
+    #                             Image={'S3Object':{'Bucket':bucket,'Name':photo2}},
+    #                             MaxFaces=1,
+    #                             QualityFilter="AUTO",
+    #                             DetectionAttributes=['ALL'])
     
     # response = rek.list_faces(CollectionId=collection_id, MaxResults=3)
                                 
@@ -38,7 +46,7 @@ def lambda_handler(event, context):
             }
         },
         CollectionId=collection_id,
-        FaceMatchThreshold=70,
+        FaceMatchThreshold=60,
         NotificationChannel={
             'SNSTopicArn': 'arn:aws:sns:ap-northeast-2:733716404034:AmazonRekognitionFaceExample01',
             'RoleArn': 'arn:aws:iam::733716404034:role/Rekognition_role'
