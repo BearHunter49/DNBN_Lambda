@@ -26,6 +26,9 @@ AWS Lambda - Python3.6, Python3.7
 
 
 ### Preview
+#### Pre-Uploaded Face Image
+<img src="./image/myFace.jpg" width="30%" height="30%"></img>
+#### Result
 <img src="./image/mosaic_1.png" width="30%" height="30%"></img>
 
 
@@ -107,6 +110,15 @@ AWS Lambda - Python3.6, Python3.7
 [DNBN_rekognition](./Lambda_rekognition)
 - mediaconvert_hls_to_mp4.py: HLS 영상을 MP4로 변환
 - lambda_start_faceSearch.py: 사용자 얼굴을 Collection에 추가하고 AWS Rekogntion에 분석을 요청하는 코드
+~~~python
+response = rek.create_collection(CollectionId=collection_id)
+response = rek.index_faces(CollectionId=collection_id,
+                        Image={'S3Object':{'Bucket':bucket,'Name':photo}},
+                        MaxFaces=1,
+                        QualityFilter="AUTO",
+                        DetectionAttributes=['ALL'])
+# Collection에 얼굴 이미지 업로드
+~~~
 
 [opencv_mosaic](./Lambda_rekogntion/opencv_mosaic)
 - main.py: OpenCV 라이브러리를 통해 영상에 모자이크를 입히는 코드. S3에서 VOD를 Lambda 서버의 /tmp/폴더로 받아, 모자이크를 입힌 뒤 S3에 다시 업로드
