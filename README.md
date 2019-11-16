@@ -25,8 +25,10 @@ AWS Lambda - Python3.6, Python3.7
 ![flow](./image/flow.png)
 
 
-
 ### Preview
+[preview](./image/mosaic_1.png)
+
+
 
 ### Code Description
 [DNBN_media](./Lambda_media/Lambda_lib)
