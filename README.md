@@ -1,8 +1,8 @@
 # DNBN_Lambda
-AWS MediaService(MediaLive, MediaStore)를 이용해 라이브 스트리밍 및 영상(VOD) 저장 서비스 구축
-AWS Lambda + AWS Rekogntion, OpenCV 라이브러리를 사용하여 모자이크를 영상에 자동으로 입힘
-AWS API Gateway 서비스로 Http 통신
-AWS SNS를 이용하여 서비스 간 메시지 전달
+- AWS MediaService(MediaLive, MediaStore)를 이용해 라이브 스트리밍 및 영상(VOD) 저장 서비스 구축
+- AWS Lambda + AWS Rekogntion, OpenCV 라이브러리를 사용하여 모자이크를 영상에 자동으로 입힘
+- AWS API Gateway 서비스로 Http 통신
+- AWS SNS를 이용하여 서비스 간 메시지 전달
 
 ### IDE
 - Pycharm 2018.ver
