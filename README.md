@@ -19,8 +19,11 @@ License: MIT
 AWS Lambda - Python3.6, Python3.7
 
 ### Service Architecture
-![flow](./image/flow.png)
+##### MediaService
 ![flow_media](./image/flow_media.png)
+##### Mosaic
+![flow](./image/flow.png)
+
 
 
 ### Preview
