@@ -26,7 +26,7 @@ AWS Lambda - Python3.6, Python3.7
 
 
 ### Preview
-[preview](./image/mosaic_1.png)
+![preview](./image/mosaic_1.png)
 
 
 
