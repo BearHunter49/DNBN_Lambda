@@ -26,8 +26,7 @@ AWS Lambda - Python3.6, Python3.7
 
 
 ### Preview
-![preview](./image/mosaic_1.png)
-
+<img src="./image/mosaic_1.png" width="30%" height="30%"></img>
 
 
 ### Code Description
