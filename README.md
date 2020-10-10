@@ -15,13 +15,12 @@ Notion: [Link](https://www.notion.so/bearhunter49/f1e0f35d4e404c998d18633e13f530
 - VS Code
 
 ### Library
-- OpenCV 4.1.2
-License: BSD
+OpenCV 4.1.2 (License: BSD)
 <br>
-- MoviePy 1.0.1
-License: MIT
+MoviePy 1.0.1 (License: MIT)
 <br>
-AWS Lambda - Python3.6, Python3.7
+AWS Lambda (Python3.7)
+<br>
 
 ### Service Architecture
 ##### MediaService
