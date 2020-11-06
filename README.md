@@ -3,6 +3,12 @@
 - AWS Lambda + AWS Rekogntion, OpenCV 라이브러리를 사용하여 모자이크를 영상에 자동으로 입힘
 - AWS API Gateway 서비스로 Http 통신
 - AWS SNS를 이용하여 서비스 간 메시지 전달
+<br>
+
+## Notion
+[Link](https://www.notion.so/bearhunter49/f1e0f35d4e404c998d18633e13f53053)
+
+<br>
 
 ### IDE
 - Pycharm 2018.ver
@@ -10,27 +16,19 @@
 - VS Code
 
 ### Library
-- OpenCV 4.1.2
-
-License: BSD
-- MoviePy 1.0.1
-
-License: MIT 
-AWS Lambda - Python3.6, Python3.7
+OpenCV 4.1.2 (License: BSD)
+<br>
+MoviePy 1.0.1 (License: MIT)
+<br>
+AWS Lambda (Python3.7)
+<br>
 
 ### Service Architecture
 ##### MediaService
 ![flow_media](./image/flow_media.png)
 ##### Mosaic
 ![flow](./image/flow.png)
-
-
-### Preview
-#### Pre-Uploaded Face Image
-<img src="./image/myFace.jpg" width="30%" height="30%"></img>
-#### Result
-<img src="./image/mosaic_1.png" width="30%" height="30%"></img>
-
+<br>
 
 ### Code Description
 [DNBN_media](./Lambda_media/Lambda_lib)
